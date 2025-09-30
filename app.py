@@ -7,7 +7,6 @@ from flask_socketio import SocketIO
 import firebase_admin
 from firebase_admin import credentials, firestore
 from google.api_core.exceptions import FailedPrecondition
-from google.cloud.firestore_v1.aggregation import AggregateQuery
 
 # ----------------- Flask & SocketIO -----------------
 app = Flask(__name__)
@@ -219,6 +218,24 @@ def reject_booking(booking_id):
 def delete_booking(booking_id):
     try:
         db.collection("bookings").document(booking_id).delete()
+        socketio.emit("update_events")
+        return jsonify({"success": True})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)}), 500
+
+@app.route("/admin/add-room", methods=["POST"])
+def add_room():
+    try:
+        data = request.json or {}
+        name = data.get("name", "").strip()
+        if not name:
+            return jsonify({"success": False, "error": "Room name required"}), 400
+
+        existing = list(db.collection("rooms").where("name", "==", name).stream())
+        if existing:
+            return jsonify({"success": False, "error": "Room already exists"}), 409
+
+        db.collection("rooms").document().set({"name": name, "available": True})
         socketio.emit("update_events")
         return jsonify({"success": True})
     except Exception as e:
