@@ -71,6 +71,7 @@
         <a href="#" class="nav-link" data-target="admin" id="admin-nav" style="display:none;">Dashboard</a>
         <a href="#" class="nav-link" id="logout-btn" style="display:none; background:var(--error); color:white;">Logout</a>
     </div>
+
     <!-- Booking Section -->
     <div class="content active" id="booking">
         <h2>Book Conference Rooms</h2>
@@ -81,33 +82,18 @@
             </div>
             <div class="form-grid">
                 <div class="form-group">
-                    <label>Event Name <span class="error-message" id="eventNameError">Event name is required</span></label>
+                    <label>Event Name</label>
                     <input type="text" id="eventName">
                 </div>
                 <div class="form-group">
-                    <label>Department <span class="error-message" id="departmentError">Department is required</span></label>
+                    <label>Department</label>
                     <input type="text" id="department">
                 </div>
-                <div class="form-group">
-                    <label>Start Date <span class="error-message" id="startDateError">Valid start date is required</span></label>
-                    <input type="date" id="startDate" min="">
-                </div>
-                <div class="form-group">
-                    <label>End Date <span class="error-message" id="endDateError">Valid end date is required</span></label>
-                    <input type="date" id="endDate" min="">
-                </div>
-                <div class="form-group">
-                    <label>Start Time <span class="error-message" id="startTimeError">Start time is required</span></label>
-                    <input type="time" id="startTime">
-                </div>
-                <div class="form-group">
-                    <label>End Time <span class="error-message" id="endTimeError">Valid end time is required</span></label>
-                    <input type="time" id="endTime">
-                </div>
-                <div class="form-group">
-                    <label>Participants <span class="error-message" id="participantsError">Must have at least 1 participant</span></label>
-                    <input type="number" id="participants" value="1" min="1">
-                </div>
+                <div class="form-group"><label>Start Date</label><input type="date" id="startDate"></div>
+                <div class="form-group"><label>End Date</label><input type="date" id="endDate"></div>
+                <div class="form-group"><label>Start Time</label><input type="time" id="startTime"></div>
+                <div class="form-group"><label>End Time</label><input type="time" id="endTime"></div>
+                <div class="form-group"><label>Participants</label><input type="number" id="participants" value="1" min="1"></div>
                 <div class="form-group"><label>Notes</label><textarea id="notes"></textarea></div>
             </div>
             <div style="margin-top:12px;">
@@ -117,6 +103,7 @@
             </div>
         </div>
     </div>
+
     <!-- Events Section -->
     <div class="content" id="events">
         <h2>Scheduled Events</h2>
@@ -127,6 +114,7 @@
         </div>
         <div id="eventsList"></div>
     </div>
+
     <!-- Admin Login Section -->
     <div class="content" id="admin-login">
         <div class="admin-login">
@@ -143,6 +131,7 @@
             </div>
         </div>
     </div>
+
     <!-- Admin Dashboard Section -->
     <div class="content" id="admin">
         <h2>Admin Dashboard</h2>
@@ -151,6 +140,7 @@
             <div class="stat-card"><h3 id="approvedCount">0</h3><p>Approved Bookings</p></div>
             <div class="stat-card"><h3 id="totalRooms">0</h3><p>Available Rooms</p></div>
         </div>
+
         <h3>Add New Room</h3>
         <div class="form-container">
             <div class="form-group">
@@ -162,6 +152,7 @@
                 <span class="success-message" id="roomSuccess">Room added successfully!</span>
             </div>
         </div>
+
         <h3>Pending Approval</h3>
         <div class="table-responsive">
             <table>
@@ -169,6 +160,7 @@
                 <tbody id="pendingRequests"></tbody>
             </table>
         </div>
+
         <h3>Approved Bookings</h3>
         <div class="filter-controls">
             <input type="date" id="approvedDateFilter">
@@ -193,270 +185,6 @@
 </div>
 
 <script src="https://cdn.socket.io/4.7.5/socket.io.min.js"></script>
-<script>
-// Utility
-const $ = (id) => document.getElementById(id);
-const show = (el, on=true) => el.style.display = on ? '' : 'none';
-const formatDateRange = (s,e) => `${s} – ${e}`;
-const formatTimeRange = (s,e) => `${s} – ${e}`;
-const todayISO = () => new Date().toISOString().slice(0,10);
-
-// Tabs
-document.querySelectorAll('.nav-link').forEach(link => {
-  link.addEventListener('click', (e) => {
-    e.preventDefault();
-    document.querySelectorAll('.nav-link').forEach(a => a.classList.remove('active'));
-    link.classList.add('active');
-    const target = link.dataset.target;
-    document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
-    if (target) $(target).classList.add('active');
-  });
-});
-
-// Modal
-function modal(title, content) {
-  $('modalTitle').innerText = title;
-  $('modalContent').innerHTML = content;
-  const m = $('messageModal');
-  m.style.display = 'flex';
-  $('modalOkButton').onclick = ()=> m.style.display='none';
-}
-
-// Dates min
-$('startDate').min = todayISO();
-$('endDate').min = todayISO();
-
-// Load rooms
-async function loadRooms() {
-  const params = new URLSearchParams();
-  const sD = $('startDate').value, eD = $('endDate').value, sT = $('startTime').value, eT = $('endTime').value;
-  if (sD && eD && sT && eT) {
-    params.set('startDate', sD); params.set('endDate', eD);
-    params.set('startTime', sT); params.set('endTime', eT);
-  }
-  const res = await fetch('/rooms?' + params.toString());
-  const rooms = await res.json();
-  const container = $('roomsContainer');
-  container.innerHTML = '';
-  rooms.forEach(r => {
-    const div = document.createElement('label');
-    div.className = 'room-card';
-    div.innerHTML = `<input type="checkbox" value="${r.name}" ${r.available ? '' : 'disabled'}>
-                     <span>${r.name}</span> ${r.available ? '' : '<small>(Unavailable)</small>'}`;
-    container.appendChild(div);
-  });
-  // fill filter
-  const rf = $('roomFilter');
-  rf.innerHTML = '<option value="">All Rooms</option>' + rooms.map(r=>`<option>${r.name}</option>`).join('');
-}
-['startDate','endDate','startTime','endTime'].forEach(id=>$(id).addEventListener('change', loadRooms));
-
-// Submit booking
-$('bookingButton').addEventListener('click', async () => {
-  // validations
-  const selectedRooms = Array.from(document.querySelectorAll('#roomsContainer input:checked')).map(i=>i.value);
-  const data = {
-    eventName: $('eventName').value.trim(),
-    department: $('department').value.trim(),
-    startDate: $('startDate').value,
-    endDate: $('endDate').value,
-    startTime: $('startTime').value,
-    endTime: $('endTime').value,
-    participants: $('participants').value,
-    notes: $('notes').value,
-    rooms: selectedRooms
-  };
-
-  // show inline errors
-  const errs = {
-    roomsError: selectedRooms.length === 0,
-    eventNameError: !data.eventName,
-    departmentError: !data.department,
-    startDateError: !data.startDate,
-    endDateError: !data.endDate || (data.endDate < data.startDate),
-    startTimeError: !data.startTime,
-    endTimeError: !data.endTime || (data.endTime <= data.startTime),
-    participantsError: !(parseInt(data.participants) >= 1)
-  };
-  Object.entries(errs).forEach(([id, bad]) => show($(id), bad));
-  if (Object.values(errs).some(Boolean)) return;
-
-  const btn = $('bookingButton');
-  const orig = btn.innerText;
-  btn.disabled = true; btn.innerHTML = 'Submitting…';
-
-  try {
-    const res = await fetch('/book', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify(data)
-    });
-    const out = await res.json();
-    if (!res.ok || !out.success) throw new Error(out.error || 'Failed to submit');
-    show($('bookingSuccess'), true);
-    modal('Booking Submitted', 'Your booking is pending admin approval.');
-    loadRooms(); // refresh availability
-    loadEvents(); // refresh events
-  } catch (e) {
-    modal('Error', e.message);
-  } finally {
-    btn.disabled = false; btn.innerHTML = orig;
-  }
-});
-
-$('resetButton').addEventListener('click', () => {
-  document.querySelectorAll('input, textarea').forEach(el => { if (el.type !== 'date' && el.type !== 'time') el.value = ''; });
-  document.querySelectorAll('#roomsContainer input:checked').forEach(i=> i.checked = false);
-  show($('bookingSuccess'), false);
-});
-
-// Events list (approved only)
-async function loadEvents() {
-  const params = new URLSearchParams();
-  params.set('status','approved');
-  const room = $('roomFilter').value;
-  const date = $('dateFilter').value;
-  if (room) params.set('room', room);
-  if (date) params.set('date', date);
-  const res = await fetch('/bookings?' + params.toString());
-  const events = await res.json();
-  const wrap = $('eventsList');
-  if (events.length === 0) { wrap.innerHTML = '<p>No events found.</p>'; return; }
-  wrap.innerHTML = `<table>
-    <thead><tr><th>Event</th><th>Rooms</th><th>Dates</th><th>Time</th><th>Participants</th><th>Dept</th></tr></thead>
-    <tbody>
-      ${events.map(e => `<tr>
-        <td>${e.eventName}</td>
-        <td>${(e.rooms||[]).join(', ')}</td>
-        <td>${formatDateRange(e.startDate, e.endDate)}</td>
-        <td>${formatTimeRange(e.startTime, e.endTime)}</td>
-        <td>${e.participants||1}</td>
-        <td>${e.department||''}</td>
-      </tr>`).join('')}
-    </tbody>
-  </table>`;
-}
-$('roomFilter').addEventListener('change', loadEvents);
-$('dateFilter').addEventListener('change', loadEvents);
-$('clearFilters').addEventListener('click', () => { $('roomFilter').value=''; $('dateFilter').value=''; loadEvents(); });
-
-// Admin login
-let isAdmin = false;
-$('adminLoginButton').addEventListener('click', async () => {
-  show($('loginLoading'), true);
-  $('adminLoginError').style.display = 'none';
-  try {
-    const res = await fetch('/admin/login', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({ username: $('adminUsername').value, password: $('adminPassword').value })
-    });
-    const out = await res.json();
-    if (!out.success) throw new Error('Invalid login');
-    isAdmin = true;
-    document.querySelector('[data-target="admin"]').style.display = '';
-    $('admin-nav').style.display = '';
-    $('logout-btn').style.display = '';
-    // switch to admin tab
-    document.querySelector('[data-target="admin"]').click();
-    refreshAdmin();
-  } catch (e) {
-    $('adminLoginError').style.display = '';
-  } finally {
-    show($('loginLoading'), false);
-  }
-});
-
-$('logout-btn').addEventListener('click', () => {
-  isAdmin = false;
-  $('admin-nav').style.display = 'none';
-  $('logout-btn').style.display = 'none';
-  // go back to booking
-  document.querySelector('[data-target="booking"]').click();
-});
-
-// Admin: fetch stats & lists
-async function refreshAdmin() {
-  const s = await (await fetch('/stats')).json();
-  $('pendingCount').innerText = s.pending;
-  $('approvedCount').innerText = s.approved;
-  $('totalRooms').innerText = s.total_rooms;
-
-  const pending = await (await fetch('/bookings?status=pending')).json();
-  const approved = await (await fetch('/bookings?status=approved' + ( $('approvedDateFilter').value ? '&date=' + $('approvedDateFilter').value : '' ))).json();
-  renderBookingRows('pendingRequests', pending, true);
-  renderBookingRows('approvedBookings', approved, false);
-}
-
-$('approvedDateFilter').addEventListener('change', refreshAdmin);
-$('clearApprovedFilter').addEventListener('click', () => { $('approvedDateFilter').value=''; refreshAdmin(); });
-
-function renderBookingRows(containerId, list, showApproveReject) {
-  const tbody = $(containerId);
-  tbody.innerHTML = list.map(b => `<tr>
-      <td>${b.eventName}</td>
-      <td>${(b.rooms||[]).join(', ')}</td>
-      <td>${formatDateRange(b.startDate, b.endDate)}</td>
-      <td>${formatTimeRange(b.startTime, b.endTime)}</td>
-      <td>${b.participants||1}</td>
-      <td>${b.department||''}</td>
-      <td>
-        ${showApproveReject ? `
-          <button data-act="approve" data-id="${b.id}" class="success">Approve</button>
-          <button data-act="reject" data-id="${b.id}" class="error">Reject</button>
-        ` : ''}
-        <button data-act="delete" data-id="${b.id}" class="secondary">Delete</button>
-      </td>
-    </tr>`).join('');
-  tbody.querySelectorAll('button').forEach(btn => {
-    btn.addEventListener('click', async () => {
-      const id = btn.dataset.id, act = btn.dataset.act;
-      try {
-        const res = await fetch(`/admin/${act}/${id}`, { method: 'POST' });
-        const out = await res.json();
-        if (!out.success) throw new Error(out.error || 'Action failed');
-        modal('Success', 'Action completed.');
-        refreshAdmin();
-        loadEvents();
-      } catch (e) {
-        modal('Error', e.message);
-      }
-    });
-  });
-}
-
-// Admin add room
-$('addRoomButton').addEventListener('click', async () => {
-  const name = $('newRoomName').value.trim();
-  if (!name) { $('roomNameError').style.display=''; return; }
-  $('roomNameError').style.display='none';
-  try {
-    const res = await fetch('/admin/add-room', {
-      method: 'POST',
-      headers: {'Content-Type': 'application/json'},
-      body: JSON.stringify({name})
-    });
-    const out = await res.json();
-    if (!out.success) throw new Error(out.error || 'Failed');
-    $('roomSuccess').style.display='';
-    setTimeout(()=> $('roomSuccess').style.display='none', 2500);
-    $('newRoomName').value='';
-    loadRooms(); refreshAdmin();
-  } catch (e) {
-    modal('Error', e.message);
-  }
-});
-
-// Initial loads
-loadRooms();
-loadEvents();
-
-// Socket updates
-const socket = io();
-socket.on('update_events', () => {
-  loadEvents();
-  refreshAdmin();
-});
-</script>
+<script src="/static/app.js"></script> <!-- keep your JS logic here -->
 </body>
 </html>
