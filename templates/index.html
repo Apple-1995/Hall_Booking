@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>CIHSR Hall Booking System</title>
   <link rel="icon" href="https://concihsr.in/wp-content/uploads/2024/10/CON-logo-small.png">
+  <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/static/style.css">
 </head>
@@ -21,100 +22,236 @@
       </div>
       <nav>
         <a href="#" class="nav-link active" data-target="home">
-          <i class="fas fa-calendar-plus"></i> Book Room
+          <i class="fas fa-calendar-plus"></i>
+          <span>Book Room</span>
         </a>
         <a href="#" class="nav-link" data-target="events">
-          <i class="fas fa-calendar-alt"></i> Events
+          <i class="fas fa-calendar-alt"></i>
+          <span>Events</span>
         </a>
         <a href="#" class="nav-link" data-target="admin-login" id="admin-nav">
-          <i class="fas fa-user-shield"></i> Admin
+          <i class="fas fa-user-shield"></i>
+          <span>Admin</span>
         </a>
         <a href="#" id="logout-btn" style="display:none;">
-          <i class="fas fa-sign-out-alt"></i> Logout
+          <i class="fas fa-sign-out-alt"></i>
+          <span>Logout</span>
         </a>
       </nav>
     </div>
   </header>
 
-  <!-- Main -->
+  <!-- Main Content -->
   <main class="main-content">
     <!-- Booking Section -->
     <section id="home" class="content active">
-      <h2><i class="fas fa-bookmark"></i> Book a Room</h2>
-      <form id="bookingForm">
-        <label>Event Name <input type="text" id="eventName" required></label>
-        <label>Department <input type="text" id="department" required></label>
-        <label>Start Date <input type="date" id="startDate" required></label>
-        <label>End Date <input type="date" id="endDate" required></label>
-        <label>Start Time <input type="time" id="startTime" required></label>
-        <label>End Time <input type="time" id="endTime" required></label>
-        <label>Participants <input type="number" id="participants" value="1" min="1"></label>
-        <label>Notes <textarea id="notes"></textarea></label>
-
-        <h3><i class="fas fa-door-open"></i> Select Rooms</h3>
-        <div id="roomsContainer" class="rooms-grid"></div>
-
-        <button type="button" id="bookingButton" class="btn-primary">
-          <i class="fas fa-paper-plane"></i> Submit Booking
-        </button>
-      </form>
-      <div id="bookingResult"></div>
+      <div class="content-header">
+        <h2><i class="fas fa-bookmark"></i> Book a Room</h2>
+        <p>Fill out the form below to request a room booking</p>
+      </div>
+      
+      <div class="booking-container">
+        <!-- Booking Form -->
+        <div class="form-section">
+          <form id="bookingForm">
+            <div class="form-row">
+              <div class="form-group">
+                <label for="eventName">Event Name</label>
+                <input type="text" id="eventName" required placeholder="Enter event name">
+              </div>
+              <div class="form-group">
+                <label for="department">Department</label>
+                <input type="text" id="department" required placeholder="Enter department name">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startDate">Start Date</label>
+                <input type="date" id="startDate" required>
+              </div>
+              <div class="form-group">
+                <label for="endDate">End Date</label>
+                <input type="date" id="endDate" required>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="startTime">Start Time</label>
+                <input type="time" id="startTime" required>
+              </div>
+              <div class="form-group">
+                <label for="endTime">End Time</label>
+                <input type="time" id="endTime" required>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label for="participants">Participants</label>
+                <input type="number" id="participants" value="1" min="1">
+              </div>
+            </div>
+            
+            <div class="form-group">
+              <label for="notes">Notes</label>
+              <textarea id="notes" placeholder="Additional information about your event"></textarea>
+            </div>
+            
+            <div class="form-group">
+              <h3><i class="fas fa-door-open"></i> Select Rooms</h3>
+              <div id="roomsContainer" class="rooms-grid"></div>
+            </div>
+            
+            <button type="button" id="bookingButton" class="btn-primary">
+              <i class="fas fa-paper-plane"></i> Submit Booking Request
+            </button>
+          </form>
+        </div>
+        
+        <!-- Info Section -->
+        <div class="info-section">
+          <div class="info-card">
+            <h3><i class="fas fa-info-circle"></i> Booking Guidelines</h3>
+            <ul>
+              <li>Bookings must be submitted at least 24 hours in advance</li>
+              <li>Maximum booking duration is 8 hours per day</li>
+              <li>Please ensure your event details are accurate</li>
+            </ul>
+          </div>
+          
+          <div class="info-card">
+            <h3><i class="fas fa-question-circle"></i> Need Help?</h3>
+            <p>Contact the administration office for assistance with room bookings:</p>
+            <p><i class="fas fa-phone"></i> +918974026757</p>
+            <p><i class="fas fa-envelope"></i> con.cihsr@gmail.com</p>
+          </div>
+        </div>
+      </div>
+      
+      <div id="bookingResult" class="result-container"></div>
     </section>
 
-    <!-- Events -->
+    <!-- Events Section -->
     <section id="events" class="content">
-      <h2><i class="fas fa-calendar-alt"></i> Approved Events</h2>
-      <div id="eventsList" class="events-grid"></div>
+      <div class="content-header">
+        <h2><i class="fas fa-calendar-alt"></i> Upcoming Events</h2>
+        <p>View all approved room bookings</p>
+      </div>
+      <div class="events-container">
+        <div id="eventsList" class="events-grid"></div>
+      </div>
     </section>
 
-    <!-- Admin Login -->
+    <!-- Admin Login Section -->
     <section id="admin-login" class="content">
-      <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
-      <input type="text" id="adminUsername" placeholder="Username">
-      <input type="password" id="adminPassword" placeholder="Password">
-      <button id="adminLoginButton" class="btn-primary"><i class="fas fa-sign-in-alt"></i> Login</button>
-      <p id="adminLoginError" class="error" style="display:none;">Invalid credentials</p>
+      <div class="login-container">
+        <div class="login-card">
+          <div class="login-header">
+            <h2><i class="fas fa-user-shield"></i> Admin Login</h2>
+            <p>Access the administration dashboard</p>
+          </div>
+          <div class="login-form">
+            <div class="form-group">
+              <label for="adminUsername">Username</label>
+              <div class="input-with-icon">
+                <i class="fas fa-user"></i>
+                <input type="text" id="adminUsername" placeholder="Enter username">
+              </div>
+            </div>
+            <div class="form-group">
+              <label for="adminPassword">Password</label>
+              <div class="input-with-icon">
+                <i class="fas fa-lock"></i>
+                <input type="password" id="adminPassword" placeholder="Enter password">
+              </div>
+            </div>
+            <button id="adminLoginButton" class="btn-primary">
+              <i class="fas fa-sign-in-alt"></i> Login
+            </button>
+            <p id="adminLoginError" class="error" style="display:none;">
+              <i class="fas fa-exclamation-triangle"></i> Invalid credentials
+            </p>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- Admin Dashboard -->
     <section id="admin" class="content">
-      <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
-      <div class="stats-cards">
-        <div><strong>Pending:</strong> <span id="pendingCount">0</span></div>
-        <div><strong>Approved:</strong> <span id="approvedCount">0</span></div>
-        <div><strong>Total Rooms:</strong> <span id="totalRooms">0</span></div>
+      <div class="content-header">
+        <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
+        <p>Manage room bookings and system settings</p>
       </div>
-
-      <!-- Add Room Form -->
-      <div class="admin-add-room">
-        <h3><i class="fas fa-plus-circle"></i> Add New Room</h3>
-        <input type="text" id="newRoomName" placeholder="Enter room name">
-        <button id="addRoomButton" class="btn-success"><i class="fas fa-plus"></i> Add Room</button>
-        <p id="addRoomMessage"></p>
+      
+      <div class="dashboard">
+        <div class="stats-cards">
+          <div class="stat-card">
+            <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
+            <div class="stat-info"><h3 id="pendingCount">0</h3><p>Pending Requests</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon approved"><i class="fas fa-check-circle"></i></div>
+            <div class="stat-info"><h3 id="approvedCount">0</h3><p>Approved Bookings</p></div>
+          </div>
+          <div class="stat-card">
+            <div class="stat-icon rooms"><i class="fas fa-door-open"></i></div>
+            <div class="stat-info"><h3 id="totalRooms">0</h3><p>Total Rooms</p></div>
+          </div>
+        </div>
+        
+        <div class="admin-tables">
+          <div class="table-section">
+            <h3><i class="fas fa-hourglass-half"></i> Pending Requests</h3>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Event</th><th>Rooms</th><th>Date</th><th>Time</th><th>Participants</th><th>Department</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="pendingRequests"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="table-section">
+            <h3><i class="fas fa-calendar-check"></i> Approved Bookings</h3>
+            <div class="table-container">
+              <table>
+                <thead>
+                  <tr>
+                    <th>Event</th><th>Rooms</th><th>Date</th><th>Time</th><th>Participants</th><th>Department</th><th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody id="approvedBookings"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="table-section">
+            <h3><i class="fas fa-plus-circle"></i> Add Room</h3>
+            <div class="form-group">
+              <input type="text" id="newRoomName" placeholder="Enter new room name">
+              <button id="addRoomButton" class="btn-success"><i class="fas fa-plus"></i> Add Room</button>
+              <p id="addRoomMessage"></p>
+            </div>
+          </div>
+        </div>
       </div>
-
-      <!-- Pending Requests -->
-      <h3>Pending Requests</h3>
-      <table>
-        <thead>
-          <tr><th>Event</th><th>Rooms</th><th>Date</th><th>Time</th><th>Dept</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="pendingRequests"></tbody>
-      </table>
-
-      <!-- Approved -->
-      <h3>Approved Bookings</h3>
-      <table>
-        <thead>
-          <tr><th>Event</th><th>Rooms</th><th>Date</th><th>Time</th><th>Dept</th><th>Actions</th></tr>
-        </thead>
-        <tbody id="approvedBookings"></tbody>
-      </table>
     </section>
   </main>
 
+  <!-- Footer -->
   <footer>
-    <p>&copy; 2025 CIHSR Hall Booking System</p>
+    <div class="footer-container">
+      <div class="footer-logo">
+        <img src="https://concihsr.in/wp-content/uploads/2024/10/CON-logo-small.png" alt="CIHSR Logo">
+        <p>Christian Institute of Health Sciences & Research</p>
+      </div>
+      <div class="footer-info">
+        <p>&copy; 2025 CIHSR Hall Booking System. All rights reserved.</p>
+      </div>
+    </div>
   </footer>
 
   <!-- Script -->

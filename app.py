@@ -18,13 +18,15 @@ ADMIN_PASS = os.environ.get("ADMIN_PASS", "con123")
 
 # ----------------- Firebase Init -----------------
 cred_data = None
-if os.environ.get("FIREBASE_CREDENTIALS"):
-    cred_data = json.loads(os.environ["FIREBASE_CREDENTIALS"])
-elif os.environ.get("FIREBASE_CREDENTIALS_B64"):
-    cred_data = json.loads(base64.b64decode(os.environ["FIREBASE_CREDENTIALS_B64"]))
+if os.environ.get("FIREBASE_CREDENTIALS_B64"):
+    try:
+        cred_json = base64.b64decode(os.environ["FIREBASE_CREDENTIALS_B64"]).decode("utf-8")
+        cred_data = json.loads(cred_json)
+    except Exception as e:
+        raise RuntimeError(f"❌ Invalid FIREBASE_CREDENTIALS_B64: {e}")
 
 if not cred_data:
-    raise RuntimeError("Missing FIREBASE_CREDENTIALS or FIREBASE_CREDENTIALS_B64 environment variable")
+    raise RuntimeError("❌ Missing FIREBASE_CREDENTIALS_B64 environment variable")
 
 cred = credentials.Certificate(cred_data)
 if not firebase_admin._apps:
@@ -53,7 +55,7 @@ def ensure_default_rooms():
         for room in DEFAULT_ROOMS:
             if room not in existing:
                 rooms_ref.document().set({"name": room, "available": True})
-        print(f"✅ Rooms ensured: {len(DEFAULT_ROOMS)}")
+        print(f"✅ Default rooms ensured: {len(DEFAULT_ROOMS)}")
     except Exception as e:
         print("⚠️ Could not ensure default rooms:", e)
 
