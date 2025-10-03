@@ -9,7 +9,7 @@ from firebase_admin import credentials, firestore
 from google.api_core.exceptions import FailedPrecondition
 
 # ----------------- Flask & SocketIO -----------------
-app = Flask(__name__)
+app = Flask(__name__, template_folder="templates", static_folder="static")
 socketio = SocketIO(app, cors_allowed_origins="*")
 
 # ----------------- Admin credentials -----------------

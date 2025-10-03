@@ -3,54 +3,45 @@ document.querySelectorAll(".nav-link").forEach(link => {
   link.addEventListener("click", e => {
     e.preventDefault();
     const target = link.getAttribute("data-target");
+
     document.querySelectorAll(".content").forEach(c => c.classList.remove("active"));
     document.querySelectorAll(".nav-link").forEach(c => c.classList.remove("active"));
+
     if (target) {
       document.getElementById(target).classList.add("active");
       link.classList.add("active");
-      if (target === "events") renderEvents();
     }
   });
 });
 
-// ====================== Socket.IO live updates ======================
-let socket;
-try {
-  socket = io();
-  socket.on("update_events", () => {
-    loadRooms();
-    loadStats();
-    loadPending();
-    loadApproved();
-    renderEvents();
-  });
-} catch (e) {
-  console.warn("Socket.IO not connected:", e);
-}
-
-// ====================== Rooms ======================
+// ====================== Load Rooms ======================
 async function loadRooms() {
   try {
     const res = await fetch("/rooms");
     const rooms = await res.json();
+
     const container = document.getElementById("roomsContainer");
     if (container) container.innerHTML = "";
+
     rooms.forEach(room => {
-      container.innerHTML += `
-        <div class="room-card">
-          <input type="checkbox" value="${room.name}" id="room-${room.id}">
-          <label for="room-${room.id}">${room.name}</label>
-        </div>
-      `;
+      if (container) {
+        container.innerHTML += `
+          <div class="room-card">
+            <input type="checkbox" value="${room.name}" id="room-${room.id}">
+            <label for="room-${room.id}">${room.name}</label>
+          </div>
+        `;
+      }
     });
   } catch (err) {
     console.error("Error loading rooms:", err);
   }
 }
 
-// ====================== Booking ======================
+// ====================== Booking Form ======================
 document.getElementById("bookingButton")?.addEventListener("click", async () => {
   const selectedRooms = [...document.querySelectorAll("#roomsContainer input:checked")].map(r => r.value);
+
   const booking = {
     eventName: document.getElementById("eventName").value,
     department: document.getElementById("department").value,
@@ -63,9 +54,6 @@ document.getElementById("bookingButton")?.addEventListener("click", async () => 
     rooms: selectedRooms
   };
 
-  const resultDiv = document.getElementById("bookingResult");
-  resultDiv.innerHTML = "";
-
   try {
     const res = await fetch("/book", {
       method: "POST",
@@ -74,57 +62,61 @@ document.getElementById("bookingButton")?.addEventListener("click", async () => 
     });
     const data = await res.json();
 
+    const resultBox = document.getElementById("bookingResult");
     if (data.success) {
-      resultDiv.innerHTML = `
-        <p class="success">✅ Booking submitted successfully!</p>
-        <ul>
-          <li><strong>Event:</strong> ${booking.eventName}</li>
-          <li><strong>Department:</strong> ${booking.department}</li>
-          <li><strong>Date:</strong> ${booking.startDate} → ${booking.endDate}</li>
-          <li><strong>Time:</strong> ${booking.startTime} - ${booking.endTime}</li>
-          <li><strong>Rooms:</strong> ${booking.rooms.join(", ")}</li>
-          <li><strong>Participants:</strong> ${booking.participants}</li>
-          <li><strong>Notes:</strong> ${booking.notes}</li>
-        </ul>
-      `;
+      resultBox.innerHTML = `
+        <div class="success">
+          <strong>✅ Booking Submitted!</strong><br>
+          Event: ${data.booking.eventName}<br>
+          Rooms: ${data.booking.rooms.join(", ")}<br>
+          Date: ${data.booking.startDate} → ${data.booking.endDate}<br>
+          Time: ${data.booking.startTime} - ${data.booking.endTime}<br>
+          Status: Pending approval
+        </div>`;
+      loadEvents(); // refresh events
       document.getElementById("bookingForm").reset();
     } else {
-      resultDiv.innerHTML = `<p class="error">❌ Error: ${data.error || "Unknown error"}</p>`;
+      resultBox.innerHTML = `
+        <div class="error">
+          <strong>❌ Booking Failed:</strong> ${data.error}
+        </div>`;
     }
   } catch (err) {
     console.error("Booking error:", err);
-    resultDiv.innerHTML = `<p class="error">❌ Request failed: ${err.message}</p>`;
+    document.getElementById("bookingResult").innerHTML = `
+      <div class="error">
+        <strong>❌ Error submitting booking:</strong> ${err.message}
+      </div>`;
   }
 });
 
 // ====================== Events ======================
-async function renderEvents() {
+async function loadEvents() {
   try {
     const res = await fetch("/bookings?status=approved");
-    const bookings = await res.json();
+    const events = await res.json();
     const container = document.getElementById("eventsList");
     container.innerHTML = "";
-    if (bookings.length === 0) {
-      container.innerHTML = "<p>No approved events yet.</p>";
-      return;
-    }
-    bookings.forEach(b => {
+
+    events.forEach(ev => {
       container.innerHTML += `
         <div class="event-card">
-          <h4>${b.eventName}</h4>
-          <p><strong>Rooms:</strong> ${b.rooms.join(", ")}</p>
-          <p><strong>Date:</strong> ${b.startDate} → ${b.endDate}</p>
-          <p><strong>Time:</strong> ${b.startTime} - ${b.endTime}</p>
-          <p><strong>Department:</strong> ${b.department} (${b.participants} participants)</p>
+          <h4>${ev.eventName}</h4>
+          <p><strong>Rooms:</strong> ${ev.rooms.join(", ")}</p>
+          <p><strong>Date:</strong> ${ev.startDate} → ${ev.endDate}</p>
+          <p><strong>Time:</strong> ${ev.startTime} - ${ev.endTime}</p>
+          <p><strong>Participants:</strong> ${ev.participants}</p>
+          <p><strong>Department:</strong> ${ev.department}</p>
+          <p><strong>Notes:</strong> ${ev.notes || "None"}</p>
         </div>
       `;
     });
   } catch (err) {
-    console.error("Error loading events:", err);
+    console.error("Events error:", err);
   }
 }
 
-// ====================== Admin ======================
+// ====================== Admin Login ======================
 document.getElementById("adminLoginButton")?.addEventListener("click", async () => {
   const username = document.getElementById("adminUsername").value;
   const password = document.getElementById("adminPassword").value;
@@ -136,10 +128,11 @@ document.getElementById("adminLoginButton")?.addEventListener("click", async () 
       body: JSON.stringify({username, password})
     });
     const data = await res.json();
+
     if (data.success) {
       document.getElementById("admin-login").classList.remove("active");
       document.getElementById("admin").classList.add("active");
-      document.getElementById("admin-nav").style.display = "inline";
+      document.getElementById("admin-nav").classList.add("active");
       document.getElementById("logout-btn").style.display = "inline";
       loadStats();
       loadPending();
@@ -152,22 +145,17 @@ document.getElementById("adminLoginButton")?.addEventListener("click", async () 
   }
 });
 
-document.getElementById("logout-btn")?.addEventListener("click", () => {
-  document.getElementById("admin").classList.remove("active");
-  document.getElementById("admin-login").classList.add("active");
-  document.getElementById("admin-nav").style.display = "none";
-  document.getElementById("logout-btn").style.display = "none";
-});
-
 // ====================== Admin Dashboard ======================
 async function loadStats() {
   try {
     const res = await fetch("/stats");
     const stats = await res.json();
-    document.getElementById("pendingCount").textContent = stats.pending ?? 0;
-    document.getElementById("approvedCount").textContent = stats.approved ?? 0;
-    document.getElementById("totalRooms").textContent = stats.total_rooms ?? 0;
-  } catch (err) { console.error("Stats error:", err); }
+    document.getElementById("pendingCount").textContent = stats.pending;
+    document.getElementById("approvedCount").textContent = stats.approved;
+    document.getElementById("totalRooms").textContent = stats.total_rooms;
+  } catch (err) {
+    console.error("Stats error:", err);
+  }
 }
 
 async function loadPending() {
@@ -187,11 +175,13 @@ async function loadPending() {
           <td>${b.department}</td>
           <td>
             <button onclick="approveBooking('${b.id}')">Approve</button>
-            <button class="error" onclick="rejectBooking('${b.id}')">Reject</button>
+            <button class="btn-danger" onclick="rejectBooking('${b.id}')">Reject</button>
           </td>
         </tr>`;
     });
-  } catch (err) { console.error("Pending error:", err); }
+  } catch (err) {
+    console.error("Pending error:", err);
+  }
 }
 
 async function loadApproved() {
@@ -209,15 +199,65 @@ async function loadApproved() {
           <td>${b.startTime} - ${b.endTime}</td>
           <td>${b.participants}</td>
           <td>${b.department}</td>
-          <td><button class="error" onclick="deleteBooking('${b.id}')">Delete</button></td>
+          <td><button class="btn-danger" onclick="deleteBooking('${b.id}')">Delete</button></td>
         </tr>`;
     });
-  } catch (err) { console.error("Approved error:", err); }
+  } catch (err) {
+    console.error("Approved error:", err);
+  }
 }
 
-async function approveBooking(id) { await fetch(`/admin/approve/${id}`, {method:"POST"}); loadPending(); loadApproved(); }
-async function rejectBooking(id) { await fetch(`/admin/reject/${id}`, {method:"POST"}); loadPending(); }
-async function deleteBooking(id) { await fetch(`/admin/delete/${id}`, {method:"POST"}); loadApproved(); }
+async function approveBooking(id) {
+  await fetch(`/admin/approve/${id}`, {method: "POST"});
+  loadPending();
+  loadApproved();
+}
+
+async function rejectBooking(id) {
+  await fetch(`/admin/reject/${id}`, {method: "POST"});
+  loadPending();
+}
+
+async function deleteBooking(id) {
+  await fetch(`/admin/delete/${id}`, {method: "POST"});
+  loadApproved();
+}
+
+// ====================== Add Room ======================
+document.getElementById("addRoomButton")?.addEventListener("click", async () => {
+  const name = document.getElementById("newRoomName").value.trim();
+  const msg = document.getElementById("addRoomMessage");
+
+  if (!name) {
+    msg.textContent = "⚠️ Please enter a room name.";
+    msg.style.color = "red";
+    return;
+  }
+
+  try {
+    const res = await fetch("/admin/add-room", {
+      method: "POST",
+      headers: {"Content-Type": "application/json"},
+      body: JSON.stringify({ name })
+    });
+    const data = await res.json();
+
+    if (data.success) {
+      msg.textContent = "✅ Room added successfully!";
+      msg.style.color = "green";
+      document.getElementById("newRoomName").value = "";
+      loadRooms();
+      loadStats();
+    } else {
+      msg.textContent = "❌ Error: " + data.error;
+      msg.style.color = "red";
+    }
+  } catch (err) {
+    msg.textContent = "❌ Error: " + err.message;
+    msg.style.color = "red";
+  }
+});
 
 // ====================== Init ======================
 loadRooms();
+loadEvents();
