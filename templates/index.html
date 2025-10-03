@@ -4,77 +4,86 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Hall Booking System</title>
-  <link rel="stylesheet" href="/static/style.css"> <!-- optional -->
+  <link rel="icon" href="https://concihsr.in/wp-content/uploads/2024/10/CON-logo-small.png">
+  <link rel="stylesheet" href="/static/style.css">
   <script src="https://cdn.socket.io/4.5.4/socket.io.min.js"></script>
 </head>
-<body style="margin:0; font-family:Arial, sans-serif; background:#f4f6f8;">
+<body>
 
-  <!-- Header with Logo -->
-  <header style="display:flex; align-items:center; justify-content:space-between; padding:10px 20px; background:#003366; color:white;">
-    <div style="display:flex; align-items:center;">
-      <img src="https://concihsr.in/wp-content/uploads/2024/10/CON-logo-small.png"
-           alt="CIHSR Logo"
-           style="height:40px; margin-right:12px;">
-      <span style="font-weight:bold; font-size:18px;">Hall Booking System</span>
+  <!-- Header -->
+  <header>
+    <div class="logo">
+      <img src="https://concihsr.in/wp-content/uploads/2024/10/CON-logo-small.png" alt="CIHSR Logo">
+      <span>CIHSR Hall Booking</span>
     </div>
     <nav>
-      <a href="#" class="nav-link active" data-target="home" style="color:white; margin:0 10px;">Home</a>
-      <a href="#" class="nav-link" data-target="events" style="color:white; margin:0 10px;">Events</a>
-      <a href="#" class="nav-link" data-target="admin-login" id="admin-nav" style="color:white; margin:0 10px;">Admin</a>
-      <a href="#" id="logout-btn" style="display:none; color:white; margin:0 10px;">Logout</a>
+      <a href="#" class="nav-link active" data-target="home">Home</a>
+      <a href="#" class="nav-link" data-target="events">Events</a>
+      <a href="#" class="nav-link" data-target="admin-login" id="admin-nav">Admin</a>
+      <a href="#" id="logout-btn" style="display:none;">Logout</a>
     </nav>
   </header>
 
-  <!-- Home / Booking Section -->
-  <div id="home" class="content active" style="padding:20px;">
+  <!-- Home -->
+  <div id="home" class="content active">
     <h2>Book a Room</h2>
+    <form id="bookingForm">
+      <label>Event Name</label>
+      <input type="text" id="eventName" required>
 
-    <label>Event Name: <input type="text" id="eventName"></label><br><br>
-    <label>Department: <input type="text" id="department"></label><br><br>
-    <label>Start Date: <input type="date" id="startDate"></label><br><br>
-    <label>End Date: <input type="date" id="endDate"></label><br><br>
-    <label>Start Time: <input type="time" id="startTime"></label><br><br>
-    <label>End Time: <input type="time" id="endTime"></label><br><br>
-    <label>Participants: <input type="number" id="participants" value="1"></label><br><br>
-    <label>Notes: <textarea id="notes"></textarea></label><br><br>
+      <label>Department</label>
+      <input type="text" id="department" required>
 
-    <h3>Select Rooms</h3>
-    <div id="roomsContainer" style="margin-bottom:15px;"></div>
+      <label>Start Date</label>
+      <input type="date" id="startDate" required>
 
-    <button id="bookingButton">Submit Booking</button>
+      <label>End Date</label>
+      <input type="date" id="endDate" required>
 
-    <!-- Placeholder for booking confirmation/error -->
-    <div id="bookingResult" style="margin-top:15px;"></div>
+      <label>Start Time</label>
+      <input type="time" id="startTime" required>
+
+      <label>End Time</label>
+      <input type="time" id="endTime" required>
+
+      <label>Participants</label>
+      <input type="number" id="participants" value="1" min="1">
+
+      <label>Notes</label>
+      <textarea id="notes"></textarea>
+
+      <h3>Select Rooms</h3>
+      <div id="roomsContainer"></div>
+
+      <button type="button" id="bookingButton">Submit Booking</button>
+    </form>
+    <div id="bookingResult"></div>
   </div>
 
-  <!-- Events Section -->
-  <div id="events" class="content" style="padding:20px; display:none;">
-    <h2>Events</h2>
-    <div id="eventsList">
-      <!-- Populated dynamically -->
-    </div>
+  <!-- Events -->
+  <div id="events" class="content">
+    <h2>Upcoming Events</h2>
+    <div id="eventsList"></div>
   </div>
 
   <!-- Admin Login -->
-  <div id="admin-login" class="content" style="padding:20px; display:none;">
+  <div id="admin-login" class="content">
     <h2>Admin Login</h2>
-    <label>Username: <input type="text" id="adminUsername"></label><br><br>
-    <label>Password: <input type="password" id="adminPassword"></label><br><br>
+    <input type="text" id="adminUsername" placeholder="Username">
+    <input type="password" id="adminPassword" placeholder="Password">
     <button id="adminLoginButton">Login</button>
-    <p id="adminLoginError" style="display:none; color:red;">Invalid credentials</p>
+    <p id="adminLoginError" class="error" style="display:none;">Invalid credentials</p>
   </div>
 
   <!-- Admin Dashboard -->
-  <div id="admin" class="content" style="padding:20px; display:none;">
+  <div id="admin" class="content">
     <h2>Admin Dashboard</h2>
-
-    <h3>Stats</h3>
     <p>Pending: <span id="pendingCount">0</span></p>
     <p>Approved: <span id="approvedCount">0</span></p>
     <p>Total Rooms: <span id="totalRooms">0</span></p>
 
     <h3>Pending Requests</h3>
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table>
       <thead>
         <tr>
           <th>Event</th><th>Rooms</th><th>Date</th><th>Time</th>
@@ -85,7 +94,7 @@
     </table>
 
     <h3>Approved Bookings</h3>
-    <table border="1" cellpadding="5" cellspacing="0">
+    <table>
       <thead>
         <tr>
           <th>Event</th><th>Rooms</th><th>Date</th><th>Time</th>
@@ -96,7 +105,7 @@
     </table>
   </div>
 
-  <!-- JS -->
+  <!-- Script -->
   <script src="/static/app.js"></script>
 </body>
 </html>
