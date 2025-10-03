@@ -63,6 +63,7 @@ ensure_default_rooms()
 
 # ----------------- Helpers -----------------
 def check_room_availability(rooms, start_date, end_date, start_time, end_time):
+    """Check if selected rooms are available in the given date & time range."""
     if not rooms:
         return False, "No rooms selected"
     try:
@@ -72,6 +73,7 @@ def check_room_availability(rooms, start_date, end_date, start_time, end_time):
             .where("status", "==", "approved")
             .where("startDate", "<=", end_date)
             .where("endDate", ">=", start_date)
+            .limit(20)  # ✅ limit to avoid timeouts
         )
         overlapping_bookings = query.stream()
         for booking in overlapping_bookings:
@@ -85,6 +87,7 @@ def check_room_availability(rooms, start_date, end_date, start_time, end_time):
         return False, f"Unexpected error: {str(e)}"
 
 def count_query(q):
+    """Count documents in a query safely (returns int)."""
     try:
         agg = q.count()
         res = list(agg.stream())
@@ -120,6 +123,7 @@ def get_rooms():
             rooms.append(doc)
         return jsonify(rooms)
     except Exception as e:
+        print("❌ Error in /rooms:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/book", methods=["POST"])
@@ -159,6 +163,7 @@ def book_room():
         socketio.emit("update_events")
         return jsonify({"success": True, "id": doc_ref.id, "booking": booking})
     except Exception as e:
+        print("❌ Error in /book:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/bookings", methods=["GET"])
@@ -186,6 +191,7 @@ def list_bookings():
         results.sort(key=lambda x: (x.get("startDate", ""), x.get("startTime", "")))
         return jsonify(results)
     except Exception as e:
+        print("❌ Error in /bookings:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/admin/login", methods=["POST"])
@@ -196,6 +202,7 @@ def admin_login():
             return jsonify({"success": True})
         return jsonify({"success": False, "error": "Invalid credentials"}), 401
     except Exception as e:
+        print("❌ Error in /admin/login:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/admin/approve/<booking_id>", methods=["POST"])
@@ -205,6 +212,7 @@ def approve_booking(booking_id):
         socketio.emit("update_events")
         return jsonify({"success": True})
     except Exception as e:
+        print("❌ Error in approve:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/admin/reject/<booking_id>", methods=["POST"])
@@ -214,6 +222,7 @@ def reject_booking(booking_id):
         socketio.emit("update_events")
         return jsonify({"success": True})
     except Exception as e:
+        print("❌ Error in reject:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/admin/delete/<booking_id>", methods=["POST"])
@@ -223,6 +232,7 @@ def delete_booking(booking_id):
         socketio.emit("update_events")
         return jsonify({"success": True})
     except Exception as e:
+        print("❌ Error in delete:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/admin/add-room", methods=["POST"])
@@ -241,6 +251,7 @@ def add_room():
         socketio.emit("update_events")
         return jsonify({"success": True})
     except Exception as e:
+        print("❌ Error in add-room:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 @app.route("/stats", methods=["GET"])
@@ -251,6 +262,7 @@ def get_stats():
         total_rooms = count_query(db.collection("rooms"))
         return jsonify({"pending": pending, "approved": approved, "total_rooms": total_rooms})
     except Exception as e:
+        print("❌ Error in /stats:", e)
         return jsonify({"success": False, "error": str(e)}), 500
 
 # ----------------- Run App -----------------
