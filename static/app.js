@@ -8,9 +8,27 @@ document.querySelectorAll(".nav-link").forEach(link => {
     if (target) {
       document.getElementById(target).classList.add("active");
       link.classList.add("active");
+      if (target === "events") {
+        renderEvents(); // fetch and render events
+      }
     }
   });
 });
+
+// ====================== Socket.IO live updates ======================
+let socket;
+try {
+  socket = io();
+  socket.on("update_events", () => {
+    loadRooms();
+    loadStats();
+    loadPending();
+    loadApproved();
+    renderEvents();
+  });
+} catch (e) {
+  console.warn("Socket.IO not connected:", e);
+}
 
 // ====================== Rooms ======================
 async function loadRooms() {
@@ -58,6 +76,9 @@ document.getElementById("bookingButton")?.addEventListener("click", async () => 
     rooms: selectedRooms
   };
 
+  const resultDiv = document.getElementById("bookingResult");
+  resultDiv.innerHTML = ""; // clear previous result
+
   try {
     const res = await fetch("/book", {
       method: "POST",
@@ -65,16 +86,73 @@ document.getElementById("bookingButton")?.addEventListener("click", async () => 
       body: JSON.stringify(booking)
     });
     const data = await res.json();
+
     if (data.success) {
-      document.getElementById("bookingSuccess").style.display = "inline";
-      setTimeout(() => (document.getElementById("bookingSuccess").style.display = "none"), 2000);
+      // Show booking details + success
+      resultDiv.innerHTML = `
+        <div style="color:green;">
+          <p><strong>Booking submitted successfully!</strong></p>
+          <p><strong>Event:</strong> ${booking.eventName}</p>
+          <p><strong>Department:</strong> ${booking.department}</p>
+          <p><strong>Date:</strong> ${booking.startDate} → ${booking.endDate}</p>
+          <p><strong>Time:</strong> ${booking.startTime} - ${booking.endTime}</p>
+          <p><strong>Rooms:</strong> ${booking.rooms.join(", ")}</p>
+          <p><strong>Participants:</strong> ${booking.participants}</p>
+          <p><strong>Notes:</strong> ${booking.notes}</p>
+        </div>
+      `;
+
+      // Reset form fields
+      document.getElementById("eventName").value = "";
+      document.getElementById("department").value = "";
+      document.getElementById("startDate").value = "";
+      document.getElementById("endDate").value = "";
+      document.getElementById("startTime").value = "";
+      document.getElementById("endTime").value = "";
+      document.getElementById("participants").value = 1;
+      document.getElementById("notes").value = "";
+      document.querySelectorAll("#roomsContainer input:checked").forEach(cb => cb.checked = false);
+
     } else {
-      alert("Booking failed: " + data.error);
+      // Show error from backend
+      resultDiv.innerHTML = `<p style="color:red;"><strong>Error:</strong> ${data.error || "Unknown error"}</p>`;
     }
   } catch (err) {
     console.error("Booking error:", err);
+    resultDiv.innerHTML = `<p style="color:red;"><strong>Request failed:</strong> ${err.message}</p>`;
   }
 });
+
+// ====================== Events ======================
+async function renderEvents() {
+  try {
+    const res = await fetch("/bookings?status=approved");
+    const bookings = await res.json();
+    const container = document.getElementById("eventsList");
+    if (!container) return;
+
+    container.innerHTML = "";
+
+    if (bookings.length === 0) {
+      container.innerHTML = "<p>No approved events yet.</p>";
+      return;
+    }
+
+    bookings.forEach(b => {
+      container.innerHTML += `
+        <div class="event-card">
+          <h4>${b.eventName}</h4>
+          <p><strong>Rooms:</strong> ${b.rooms.join(", ")}</p>
+          <p><strong>Date:</strong> ${b.startDate} → ${b.endDate}</p>
+          <p><strong>Time:</strong> ${b.startTime} - ${b.endTime}</p>
+          <p><strong>Department:</strong> ${b.department} (${b.participants} participants)</p>
+        </div>
+      `;
+    });
+  } catch (err) {
+    console.error("Error loading events:", err);
+  }
+}
 
 // ====================== Admin Login ======================
 document.getElementById("adminLoginButton")?.addEventListener("click", async () => {
@@ -105,14 +183,22 @@ document.getElementById("adminLoginButton")?.addEventListener("click", async () 
   }
 });
 
+// Logout
+document.getElementById("logout-btn")?.addEventListener("click", () => {
+  document.getElementById("admin").classList.remove("active");
+  document.getElementById("admin-login").classList.add("active");
+  document.getElementById("admin-nav").style.display = "none";
+  document.getElementById("logout-btn").style.display = "none";
+});
+
 // ====================== Admin Dashboard ======================
 async function loadStats() {
   try {
     const res = await fetch("/stats");
     const stats = await res.json();
-    document.getElementById("pendingCount").textContent = stats.pending;
-    document.getElementById("approvedCount").textContent = stats.approved;
-    document.getElementById("totalRooms").textContent = stats.total_rooms;
+    document.getElementById("pendingCount").textContent = stats.pending ?? 0;
+    document.getElementById("approvedCount").textContent = stats.approved ?? 0;
+    document.getElementById("totalRooms").textContent = stats.total_rooms ?? 0;
   } catch (err) {
     console.error("Stats error:", err);
   }
