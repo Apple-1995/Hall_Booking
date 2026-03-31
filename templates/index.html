@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -9,12 +10,13 @@
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
   <link rel="stylesheet" href="/static/style.css">
 </head>
+
 <body>
   <!-- Header -->
   <header>
     <div class="header-container">
       <div class="logo">
-        <img src="https://concihsr.in/wp-content/uploads/2024/10/CON-logo-small.png" alt="CIHSR Logo">
+        <img src="https://concihsr.in/wp-content/uploads/2026/03/Final-con-logo-1-1.png" alt="CIHSR Logo">
         <div class="logo-text">
           <h1>CIHSR</h1>
           <span>Hall Booking System</span>
@@ -49,7 +51,7 @@
         <h2><i class="fas fa-bookmark"></i> Book a Room</h2>
         <p>Fill out the form below to request a room booking</p>
       </div>
-      
+
       <div class="booking-container">
         <!-- Booking Form -->
         <div class="form-section">
@@ -64,7 +66,7 @@
                 <input type="text" id="department" required placeholder="Enter department name">
               </div>
             </div>
-            
+
             <div class="form-row">
               <div class="form-group">
                 <label for="startDate">Start Date</label>
@@ -75,7 +77,7 @@
                 <input type="date" id="endDate" required>
               </div>
             </div>
-            
+
             <div class="form-row">
               <div class="form-group">
                 <label for="startTime">Start Time</label>
@@ -86,30 +88,30 @@
                 <input type="time" id="endTime" required>
               </div>
             </div>
-            
+
             <div class="form-row">
               <div class="form-group">
                 <label for="participants">Participants</label>
                 <input type="number" id="participants" value="1" min="1">
               </div>
             </div>
-            
+
             <div class="form-group">
               <label for="notes">Notes</label>
               <textarea id="notes" placeholder="Additional information about your event"></textarea>
             </div>
-            
+
             <div class="form-group">
               <h3><i class="fas fa-door-open"></i> Select Rooms</h3>
               <div id="roomsContainer" class="rooms-grid"></div>
             </div>
-            
+
             <button type="button" id="bookingButton" class="btn-primary">
               <i class="fas fa-paper-plane"></i> Submit Booking Request
             </button>
           </form>
         </div>
-        
+
         <!-- Info Section -->
         <div class="info-section">
           <div class="info-card">
@@ -118,9 +120,10 @@
               <li>Bookings must be submitted at least 24 hours in advance</li>
               <li>Maximum booking duration is 8 hours per day</li>
               <li>Please ensure your event details are accurate</li>
+              <li>Booking for External, Please Get approval from the administration</li>
             </ul>
           </div>
-          
+
           <div class="info-card">
             <h3><i class="fas fa-question-circle"></i> Need Help?</h3>
             <p>Contact the administration office for assistance with room bookings:</p>
@@ -129,7 +132,7 @@
           </div>
         </div>
       </div>
-      
+
       <div id="bookingResult" class="result-container"></div>
     </section>
 
@@ -184,23 +187,32 @@
         <h2><i class="fas fa-tachometer-alt"></i> Admin Dashboard</h2>
         <p>Manage room bookings and system settings</p>
       </div>
-      
+
       <div class="dashboard">
         <div class="stats-cards">
           <div class="stat-card">
             <div class="stat-icon pending"><i class="fas fa-clock"></i></div>
-            <div class="stat-info"><h3 id="pendingCount">0</h3><p>Pending Requests</p></div>
+            <div class="stat-info">
+              <h3 id="pendingCount">0</h3>
+              <p>Pending Requests</p>
+            </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon approved"><i class="fas fa-check-circle"></i></div>
-            <div class="stat-info"><h3 id="approvedCount">0</h3><p>Approved Bookings</p></div>
+            <div class="stat-info">
+              <h3 id="approvedCount">0</h3>
+              <p>Approved Bookings</p>
+            </div>
           </div>
           <div class="stat-card">
             <div class="stat-icon rooms"><i class="fas fa-door-open"></i></div>
-            <div class="stat-info"><h3 id="totalRooms">0</h3><p>Total Rooms</p></div>
+            <div class="stat-info">
+              <h3 id="totalRooms">0</h3>
+              <p>Total Rooms</p>
+            </div>
           </div>
         </div>
-        
+
         <div class="admin-tables">
           <div class="table-section">
             <h3><i class="fas fa-hourglass-half"></i> Pending Requests</h3>
@@ -208,7 +220,13 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Event</th><th>Rooms</th><th>Date</th><th>Time</th><th>Participants</th><th>Department</th><th>Actions</th>
+                    <th>Event</th>
+                    <th>Rooms</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Participants</th>
+                    <th>Department</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="pendingRequests"></tbody>
@@ -221,7 +239,13 @@
               <table>
                 <thead>
                   <tr>
-                    <th>Event</th><th>Rooms</th><th>Date</th><th>Time</th><th>Participants</th><th>Department</th><th>Actions</th>
+                    <th>Event</th>
+                    <th>Rooms</th>
+                    <th>Date</th>
+                    <th>Time</th>
+                    <th>Participants</th>
+                    <th>Department</th>
+                    <th>Actions</th>
                   </tr>
                 </thead>
                 <tbody id="approvedBookings"></tbody>
@@ -257,4 +281,5 @@
   <!-- Script -->
   <script src="/static/app.js"></script>
 </body>
+
 </html>

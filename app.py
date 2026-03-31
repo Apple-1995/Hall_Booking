@@ -36,9 +36,7 @@ db = firestore.client()
 
 # ----------------- Default Rooms -----------------
 DEFAULT_ROOMS = [
-    "CSSE Conference Hall 1",
     "CSSE Conference Hall 2",
-    "ARES",
     "OSCE",
     "Board Room",
     "Medical Surgical Skill Lab",
